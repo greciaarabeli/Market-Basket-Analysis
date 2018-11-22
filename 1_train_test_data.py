@@ -27,6 +27,9 @@ orders_set_testlist=test.order_id.unique()
 train = data[-data["order_id"].isin(orders_set_testlist)]
 orders_set_trainlist=train.order_id.unique()
 
+total=train.groupby(['order_id']).size().reset_index(name='total')
+train=train.merge(total,on='order_id')
+
 train.to_csv('1_train.csv')
 test.to_csv('1_test.csv')
 
