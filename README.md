@@ -9,7 +9,8 @@
   * apriori
   * lightfm
   * xgboost
-  * Time Series clustering:
-    - K-Shape
-    - DTW
-    - Soft-DTW
+    - xgboost
+    - Time Series clustering:
+      -K-Shape
+      -DTW
+      -Soft-DTW
