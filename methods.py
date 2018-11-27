@@ -272,23 +272,28 @@ def do_xgboost(train, test, return_pred, num_cluster):
              }
     orders_set_test=test.order_id.unique()
     y_train = train['reordered']
-    X_train = train.drop(['reordered', 'eval_set', 'batch', 'total','product_name', 'product_id'], axis=1)
+    X_train = train.drop(['reordered', 'eval_set', 'batch', 'total','product_name', 'add_to_cart_order'], axis=1)
 
-    y_test = test['reordered']
-    X_test = test.drop(['reordered', 'eval_set', 'batch','product_name', 'product_id'], axis=1)
-
+    X_test = test.drop_duplicates(subset=['order_id', 'user_id'], keep='first')
+    X_test=X_test.drop(['product_id','add_to_cart_order', 'reordered', 'eval_set', 'product_name', 'aisle_id', 'department_id', 'batch'], axis=1)
+    X_train_sub=train.drop_duplicates(subset=['product_id', 'user_id'], keep='first')
+    X_train_sub=X_train_sub[['product_id', 'user_id', 'aisle_id','department_id']]
+    X_test=pd.merge(left=X_test, right=X_train_sub, how='right',on=['user_id'])
+    X_test = X_test[['order_id', 'product_id', 'user_id', 'order_number', 'order_dow','order_hour_of_day', 'days_since_prior_order', 'aisle_id','department_id']]
+    X_train = X_train[['order_id', 'product_id', 'user_id', 'order_number', 'order_dow','order_hour_of_day', 'days_since_prior_order', 'aisle_id','department_id']]
     dtrain = xgboost.DMatrix(X_train, label=y_train)
     dtest = xgboost.DMatrix(X_test)
     model = xgboost.train(param, dtrain)
     predict_labels = model.predict(dtest)
-    predict_labels = (predict_labels > 0.50) * 1
-    test['pred'] = predict_labels
-    true = test[test['reordered'] == 1].groupby('order_id').aggregate({'product_id': lambda x: list(x)})
-    pred = test[test['pred'] == 1].groupby('order_id').aggregate({'product_id': lambda x: list(x)})
+    
+    X_test['pred']=predict_labels
+    X_test['pred'] = (X_test['pred'] > X_test['pred'].mean()) * 1
+    pred = X_test[X_test['pred'] == 1].groupby('order_id').aggregate({'product_id': lambda x: list(x)})
+    true =test[test['reordered'] == 1].groupby('order_id').aggregate({'product_id': lambda x: list(x)})
     sum_recall = 0
     sum_precision = 0
     sum_fscore = 0
-    n = len(true)
+    n = len(orders_set_test)
     for i in orders_set_test:
         if i in true.index:
             y = true['product_id'][i]
@@ -338,7 +343,7 @@ def xgb_kshape(train, test, return_pred, num_cluster):
     for cluster in clusters:
         train_i = train[train['cluster'] == cluster]
         test_i = test[test['cluster'] == cluster]
-        recall, precision, fscore = methods.do_xgboost(train_i, test_i, return_pred, num_cluster)
+        recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
         sum_fscore = sum_fscore + fscore
@@ -372,7 +377,7 @@ def xgb_dtw(train, test, return_pred, num_cluster):
     for cluster in clusters:
         train_i = train[train['cluster'] == cluster]
         test_i = test[test['cluster'] == cluster]
-        recall, precision, fscore = methods.do_xgboost(train_i, test_i, return_pred, num_cluster)
+        recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
         sum_fscore = sum_fscore + fscore
@@ -406,7 +411,7 @@ def xgb_softdtw(train, test, return_pred, num_cluster):
     for cluster in clusters:
         train_i = train[train['cluster'] == cluster]
         test_i = test[test['cluster'] == cluster]
-        recall, precision, fscore = methods.do_xgboost(train_i, test_i, return_pred, num_cluster)
+        recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
         sum_fscore = sum_fscore + fscore
