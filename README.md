@@ -10,7 +10,7 @@
   * lightfm
   * xgboost
     - xgboost
-    - Time Series clustering:
+    - xgboost + Time Series clustering:
       -K-Shape
       -DTW
       -Soft-DTW
