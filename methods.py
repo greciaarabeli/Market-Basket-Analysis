@@ -327,22 +327,23 @@ def xgb_kshape(train, test, return_pred, num_cluster):
     scores = TimeSeries_Clustering.compute_scores(ks, X_train, y_pred)
     plt.boxplot(scores)
 
-    TimeSeries_Clustering.plot_data(ks, X_train, y_pred, sz, ks.n_clusters)
+    TimeSeries_Clustering.plot_data(ks, X_train, y_pred, sz, ks.n_clusters, centroid=True)
     y_pred_df = pd.DataFrame(y_pred)
     userindex = train.user_id.unique()
     userindex = np.sort(userindex)
     y_pred_df['user_id'] = userindex
-    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-
+    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster_kshape'}, axis='columns')
+    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster_kshape'}, axis='columns')
+    user_cluster = test.drop_duplicates(subset=['user_id'], keep='first')[['user_id', 'cluster_kshape']]
+    user_cluster.to_csv('\clusters\k_shape_'+str(test.batch.unique())+'.csv')
     sum_recall = 0
     sum_precision = 0
     sum_fscore = 0
 
-    clusters = test.cluster.unique()
+    clusters = test.cluster_kshape.unique()
     for cluster in clusters:
-        train_i = train[train['cluster'] == cluster]
-        test_i = test[test['cluster'] == cluster]
+        train_i = train[train['cluster_kshape'] == cluster]
+        test_i = test[test['cluster_kshape'] == cluster]
         recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
@@ -366,17 +367,18 @@ def xgb_dtw(train, test, return_pred, num_cluster):
     userindex = train.user_id.unique()
     userindex = np.sort(userindex)
     y_pred_df['user_id'] = userindex
-    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-
+    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster_dtw'}, axis='columns')
+    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster_dtw'}, axis='columns')
+    user_cluster = test.drop_duplicates(subset=['user_id'], keep='first')[['user_id', 'cluster_dtw']]
+    user_cluster.to_csv('\clusters\dtw_'+str(test.batch.unique())+'.csv')
     sum_recall = 0
     sum_precision = 0
     sum_fscore = 0
 
-    clusters = test.cluster.unique()
+    clusters = test.cluster_dtw.unique()
     for cluster in clusters:
-        train_i = train[train['cluster'] == cluster]
-        test_i = test[test['cluster'] == cluster]
+        train_i = train[train['cluster_dtw'] == cluster]
+        test_i = test[test['cluster_dtw'] == cluster]
         recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
@@ -400,17 +402,18 @@ def xgb_softdtw(train, test, return_pred, num_cluster):
     userindex = train.user_id.unique()
     userindex = np.sort(userindex)
     y_pred_df['user_id'] = userindex
-    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster'}, axis='columns')
-
+    test = test.merge(y_pred_df, on='user_id').rename({0: 'cluster_softdtw'}, axis='columns')
+    train = train.merge(y_pred_df, on='user_id').rename({0: 'cluster_softdtw'}, axis='columns')
+    user_cluster = test.drop_duplicates(subset=['user_id'], keep='first')[['user_id', 'cluster_softdtw']]
+    user_cluster.to_csv('\clusters\softdtw_'+str(test.batch.unique())+'.csv')
     sum_recall = 0
     sum_precision = 0
     sum_fscore = 0
 
-    clusters = test.cluster.unique()
+    clusters = test.cluster_softdtw.unique()
     for cluster in clusters:
-        train_i = train[train['cluster'] == cluster]
-        test_i = test[test['cluster'] == cluster]
+        train_i = train[train['cluster_softdtw'] == cluster]
+        test_i = test[test['cluster_softdtw'] == cluster]
         recall, precision, fscore = do_xgboost(train_i, test_i, return_pred, num_cluster)
         sum_recall = sum_recall + recall
         sum_precision = sum_precision + precision
